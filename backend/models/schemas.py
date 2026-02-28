@@ -3,68 +3,50 @@ from typing import Optional, List, Dict, Any
 
 
 class DiffRequest(BaseModel):
-    """文本diff请求"""
     text_a: str = Field(..., description="旧文本")
     text_b: str = Field(..., description="新文本")
 
 
 class DiffResponse(BaseModel):
-    """文本diff响应"""
     diff_html: str = Field(..., description="HTML格式的diff")
     diff_unified: str = Field(..., description="unified格式的diff")
     summary: str = Field(..., description="变化摘要")
 
 
-# ============ 回滚相关模型 (Rollback/Review) ============
+# ============ Review / Rollback ============
 
-class SessionInfo(BaseModel):
-    """Session 元信息"""
-    session_id: str
-    created_at: Optional[str] = None
-    resource_count: int
-
-
-class SnapshotInfo(BaseModel):
-    """快照元信息"""
-    resource_id: str
-    resource_type: str  # 'path' or 'memory'
-    snapshot_time: str
-    operation_type: Optional[str] = "modify"
-    uri: Optional[str] = None  # Display URI (for memory snapshots where resource_id is memory:{id})
+class ChangeInfo(BaseModel):
+    """One affected URI in the changeset pool."""
+    uri: str
+    change_type: str  # "created", "modified", "deleted"
 
 
-class SnapshotDetail(BaseModel):
-    """快照详细数据"""
-    resource_id: str
-    resource_type: str
-    snapshot_time: str
-    data: Dict[str, Any]
-
-
-class ResourceDiff(BaseModel):
-    """资源的快照与当前状态对比"""
-    resource_id: str
-    resource_type: str
-    snapshot_time: str
-    snapshot_data: Dict[str, Any]  # 快照时的完整状态 (content, priority, disclosure)
-    current_data: Dict[str, Any]   # 当前的完整状态
-    diff_unified: str
-    diff_summary: str
+class UriDiff(BaseModel):
+    """Diff between before-state and current DB state for one URI."""
+    uri: str
+    change_type: str
+    before_content: Optional[str] = None
+    current_content: Optional[str] = None
+    before_meta: Optional[Dict[str, Any]] = None
+    current_meta: Optional[Dict[str, Any]] = None
     has_changes: bool
 
 
-class RollbackRequest(BaseModel):
-    """回滚请求"""
-    task_description: Optional[str] = Field(
-        "Rollback to snapshot by human",
-        description="任务描述（记录在版本历史中）"
-    )
-
-
 class RollbackResponse(BaseModel):
-    """回滚响应"""
-    resource_id: str
-    resource_type: str
+    uri: str
     success: bool
     message: str
-    new_version: Optional[int] = None
+
+
+class ChangeGroup(BaseModel):
+    node_uuid: str
+    display_uri: str
+    top_level_table: str
+    row_count: int
+
+
+class GroupRollbackResponse(BaseModel):
+    node_uuid: str
+    success: bool
+    message: str
+

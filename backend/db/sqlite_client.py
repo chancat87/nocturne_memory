@@ -300,6 +300,15 @@ class SQLiteClient:
                 await session.rollback()
                 raise
 
+    @asynccontextmanager
+    async def _optional_session(self, session: Optional[AsyncSession] = None):
+        """Helper to use an existing session or create a new one."""
+        if session:
+            yield session
+        else:
+            async with self.session() as new_session:
+                yield new_session
+
     # =========================================================================
     # Read Operations
     # =========================================================================
@@ -1281,10 +1290,10 @@ class SQLiteClient:
                 "rows_after": rows_after,
             }
 
-    async def rollback_to_memory(self, target_memory_id: int) -> Dict[str, Any]:
+    async def rollback_to_memory(self, target_memory_id: int, session: Optional[AsyncSession] = None) -> Dict[str, Any]:
         """Inverse of _deprecate_node_memories: restore a deprecated memory
         as the active version, deprecating whatever is currently active."""
-        async with self.session() as session:
+        async with self._optional_session(session) as session:
             target_row = await session.execute(
                 select(Memory).where(Memory.id == target_memory_id)
             )
@@ -1403,7 +1412,7 @@ class SQLiteClient:
             }
 
     async def remove_path(
-        self, path: str, domain: str = "core"
+        self, path: str, domain: str = "core", session: Optional[AsyncSession] = None
     ) -> Dict[str, Any]:
         """
         Remove a path and its sub-paths with orphan prevention.
@@ -1421,7 +1430,7 @@ class SQLiteClient:
             ValueError: If the path does not exist, or if deletion would
                 create unreachable child nodes.
         """
-        async with self.session() as session:
+        async with self._optional_session(session) as session:
             target = await self._resolve_path(session, path, domain)
             if not target:
                 raise ValueError(f"Path '{domain}://{path}' not found")
@@ -1485,6 +1494,7 @@ class SQLiteClient:
         parent_uuid: Optional[str] = None,
         priority: int = 0,
         disclosure: Optional[str] = None,
+        session: Optional[AsyncSession] = None,
     ) -> Dict[str, Any]:
         """
         Restore a path pointing to a node (used for rollback of delete).
@@ -1492,7 +1502,7 @@ class SQLiteClient:
         Creates/finds the edge from the parent to the target node,
         creates the path entry, and ensures the node has an active memory.
         """
-        async with self.session() as session:
+        async with self._optional_session(session) as session:
             node_result = await session.execute(
                 select(Node).where(Node.uuid == node_uuid)
             )

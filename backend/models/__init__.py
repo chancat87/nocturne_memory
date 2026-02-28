@@ -1,23 +1,19 @@
 from .schemas import (
     DiffRequest,
     DiffResponse,
-    # Rollback/Review related
-    SessionInfo,
-    SnapshotInfo,
-    SnapshotDetail,
-    ResourceDiff,
-    RollbackRequest,
-    RollbackResponse
+    ChangeInfo,
+    UriDiff,
+    RollbackResponse,
+    ChangeGroup,
+    GroupRollbackResponse,
 )
 
 __all__ = [
     "DiffRequest",
     "DiffResponse",
-    # Rollback/Review related
-    "SessionInfo",
-    "SnapshotInfo",
-    "SnapshotDetail",
-    "ResourceDiff",
-    "RollbackRequest",
-    "RollbackResponse"
+    "ChangeInfo",
+    "UriDiff",
+    "RollbackResponse",
+    "ChangeGroup",
+    "GroupRollbackResponse",
 ]
