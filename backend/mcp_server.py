@@ -24,6 +24,7 @@ from dotenv import load_dotenv, find_dotenv
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 from db.sqlite_client import get_db_client, close_db_client
 from db.snapshot import get_snapshot_manager
 import contextlib
@@ -56,7 +57,13 @@ async def lifespan(server: FastMCP):
         await close_db_client()
 
 # Initialize FastMCP server with the lifespan hook
-mcp = FastMCP("Nocturne Memory Interface", lifespan=lifespan)
+mcp = FastMCP(
+    "Nocturne Memory Interface",
+    lifespan=lifespan,
+    transport_security=TransportSecuritySettings(
+        enable_dns_rebinding_protection=False  # safe when behind a trusted reverse proxy
+    ),
+)
 
 # =============================================================================
 # Domain Configuration
